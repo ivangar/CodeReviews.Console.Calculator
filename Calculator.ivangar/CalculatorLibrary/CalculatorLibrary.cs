@@ -1,4 +1,5 @@
-﻿using CalculatorLibrary.Models;
+﻿using CalculatorLibrary.Enums;
+using CalculatorLibrary.Models;
 using Newtonsoft.Json;
 
 namespace CalculatorLibrary
@@ -24,12 +25,7 @@ namespace CalculatorLibrary
         {
             double result = double.NaN; // Default value is "not-a-number" if an operation, such as division, could result in an error.
             char operation = default;
-            writer.WriteStartObject();
-            writer.WritePropertyName("Operand1");
-            writer.WriteValue(num1);
-            writer.WritePropertyName("Operand2");
-            writer.WriteValue(num2);
-            writer.WritePropertyName("Operation");
+            LogOperationObject(num1, num2);
 
             // Use a switch statement to do the math.
             switch (op)
@@ -83,9 +79,25 @@ namespace CalculatorLibrary
                     break;
             }
 
-            writer.WritePropertyName("Result");
-            writer.WriteValue(result);
-            writer.WriteEndObject();
+            LogResult(result);
+            return result;
+        }
+
+        public double DoTrigonometryOperation(double degrees, TrigonometryFunctions function, string op)
+        {
+            double result = double.NaN;
+            char operation = '°';
+
+            if (TryCalculateTrygonometry(degrees, function, out result))
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("Operand1");
+                writer.WriteValue(degrees);
+                writer.WritePropertyName("Operation");
+                writer.WriteValue(operation);
+                LogResult(result);
+                AddTrigOperation(degrees, function, operation, result);
+            }
 
             return result;
         }
@@ -154,6 +166,17 @@ namespace CalculatorLibrary
             });
         }
 
+        private void AddTrigOperation(double degrees, TrigonometryFunctions function, char op, double result)
+        {
+            _operations.Add(new TrigonometryOperation
+            {
+                Degrees = degrees,
+                Function = function,
+                Operation = op,
+                Result = result
+            });
+        }
+
         private bool TryCalculateSquareRoot(double radicand, out double result)
         {
             if (radicand < 0)
@@ -184,7 +207,48 @@ namespace CalculatorLibrary
                 result = Math.Pow(baseNumber, exponent);
                 return true;
             }
+        }
 
+        private bool TryCalculateTrygonometry(double degrees, TrigonometryFunctions function, out double result)
+        {
+            if (degrees > 360 || degrees < -360)
+            {
+                Console.WriteLine("The degree value is outside of this scope, try a smaller number");
+                result = default;
+                return false;
+            }
+
+            else
+            {
+                var radians = degrees * (Math.PI / 180);
+
+                result = function switch
+                {
+                    TrigonometryFunctions.Sin => Math.Round(Math.Sin(radians), 4),
+                    TrigonometryFunctions.Cos => Math.Round(Math.Cos(radians), 4),
+                    TrigonometryFunctions.Tan => Math.Round(Math.Tan(radians), 4),
+                    _ => throw new ArgumentOutOfRangeException(nameof(function))
+                };
+
+                return true;
+            }
+        }
+
+        private void LogOperationObject(double num1, double num2)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("Operand1");
+            writer.WriteValue(num1);
+            writer.WritePropertyName("Operand2");
+            writer.WriteValue(num2);
+            writer.WritePropertyName("Operation");
+        }
+
+        private void LogResult(double result)
+        {
+            writer.WritePropertyName("Result");
+            writer.WriteValue(result);
+            writer.WriteEndObject();
         }
     }
 }

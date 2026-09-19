@@ -10,6 +10,7 @@
             { 'd', "Divide"},
             { 'r', "Square Root"},
             { 'p', "Power"},
+            { 't', "Trigonometry function"},
         };
 
         public static void Intro()

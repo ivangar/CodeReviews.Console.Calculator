@@ -4,9 +4,6 @@
     {
         public double Radicand { get; set; }
 
-        public override string ToString()
-        {
-            return $"{Operation} {Radicand} = {Result}";
-        }
+        public override string ToString() => $"{Operation} {Radicand} = {Result}";
     }
 }

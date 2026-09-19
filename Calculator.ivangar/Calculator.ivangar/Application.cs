@@ -1,4 +1,5 @@
 ﻿using CalculatorLibrary;
+using CalculatorLibrary.Enums;
 
 namespace Calculator.ivangar
 {
@@ -6,6 +7,8 @@ namespace Calculator.ivangar
     {
         private bool EndApp = false;
         private readonly CalculatorEngine Calculator = new();
+
+        private readonly Random _random = new();
 
         public void Run()
         {
@@ -30,6 +33,9 @@ namespace Calculator.ivangar
                         break;
                     case "p":
                         PowerOperation(op);
+                        break;
+                    case "t":
+                        TrigonometryOperation(op);
                         break;
                     default:
                         BaseMathOperation(op);
@@ -95,6 +101,29 @@ namespace Calculator.ivangar
             try
             {
                 var result = Calculator.DoOperation(baseOperand, operation, exponent);
+
+                if (double.IsNaN(result))
+                    Menu.PrintError("This operation will result in a mathematical error.\n");
+
+                else Console.WriteLine("Your result: {0:0.##}\n", result);
+            }
+            catch (Exception e)
+            {
+                Menu.PrintError("Oh no! An exception occurred trying to do the math.\n - Details: " + e.Message);
+            }
+        }
+
+        public void TrigonometryOperation(string operation)
+        {
+            double degrees = Menu.GetOperand("Enter an angle in degrees°: ");
+            var functionValues = Enum.GetValues<TrigonometryFunctions>();
+            var randomFunction = _random.Next(functionValues.Length);
+            var function = functionValues[randomFunction];
+
+            try
+            {
+                // Hard-Coding Sin operation for now, change it to choose randomly from the enum
+                var result = Calculator.DoTrigonometryOperation(degrees, function, operation);
 
                 if (double.IsNaN(result))
                     Menu.PrintError("This operation will result in a mathematical error.\n");
