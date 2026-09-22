@@ -1,4 +1,5 @@
-﻿using CalculatorLibrary;
+﻿using Calculator.ivangar.Enums;
+using CalculatorLibrary;
 using CalculatorLibrary.Enums;
 
 namespace Calculator.ivangar
@@ -13,45 +14,73 @@ namespace Calculator.ivangar
         public void Run()
         {
             Menu.Intro();
+            Menu.PrintMenu();
+
+            string? optionInput = Console.ReadLine();
+            MainMenuOptions menuOption;
 
             while (!EndApp)
             {
-                // Ask the user to choose an operator.
-                Menu.PrintMenu();
-                string? op = Console.ReadLine();
-
-                while (!Menu.ValidateMainOptions(op))
+                while (!Menu.TryGetMenuOption(optionInput, out menuOption))
                 {
                     Menu.PrintMenu(invalid: true);
-                    op = Console.ReadLine();
+                    optionInput = Console.ReadLine();
                 }
 
-                switch (op!.ToLower())
+                switch (menuOption)
                 {
-                    case "r":
-                        SquareRootOperation(op);
+                    case MainMenuOptions.PerformOperation:
+                        PerformCalculation();
                         break;
-                    case "p":
-                        PowerOperation(op);
+                    case MainMenuOptions.ViewOperations:
+                        Calculator.PrintAllOperations();
                         break;
-                    case "t":
-                        TrigonometryOperation(op);
+                    case MainMenuOptions.DeleteOperations:
+                        Calculator.DeleteOperations();
                         break;
-                    default:
-                        BaseMathOperation(op);
+                    case MainMenuOptions.Exit:
+                        EndApp = true;
+                        Console.WriteLine("\nThank you for using the Calculator.");
                         break;
                 }
 
-                Console.WriteLine("------------------------\n");
+                if (EndApp)
+                    break;
 
-
-                Console.Write("Press 'n' and Enter to close the app, or press any other key and Enter to continue: ");
-                if (Console.ReadLine() == "n") EndApp = true;
-
-                Console.WriteLine("\n");
+                Menu.PrintMenu();
+                optionInput = Console.ReadLine();
             }
 
             Calculator.Finish();
+        }
+
+        public void PerformCalculation()
+        {
+            // Ask the user to choose an operator.
+            Menu.PrintOperations();
+            string? op = Console.ReadLine();
+
+            while (!Menu.ValidateOperationChoice(op))
+            {
+                Menu.PrintOperations(invalid: true);
+                op = Console.ReadLine();
+            }
+
+            switch (op!.ToLower())
+            {
+                case "r":
+                    SquareRootOperation(op);
+                    break;
+                case "p":
+                    PowerOperation(op);
+                    break;
+                case "t":
+                    TrigonometryOperation(op);
+                    break;
+                default:
+                    BaseMathOperation(op);
+                    break;
+            }
         }
 
         public void BaseMathOperation(string operation)
@@ -122,7 +151,6 @@ namespace Calculator.ivangar
 
             try
             {
-                // Hard-Coding Sin operation for now, change it to choose randomly from the enum
                 var result = Calculator.DoTrigonometryOperation(degrees, function, operation);
 
                 if (double.IsNaN(result))

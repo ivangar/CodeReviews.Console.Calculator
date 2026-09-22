@@ -1,8 +1,10 @@
-﻿namespace Calculator.ivangar
+﻿using Calculator.ivangar.Enums;
+
+namespace Calculator.ivangar
 {
     public static class Menu
     {
-        private static readonly Dictionary<char, string> _operations = new Dictionary<char, string>()
+        private static readonly Dictionary<char, string> _operations = new()
         {
             { 'a', "Add"},
             { 's', "Subtract"},
@@ -22,14 +24,35 @@
         public static void PrintMenu(bool invalid = false)
         {
             if (invalid)
-                Console.WriteLine("\nError: Unrecognized input.");
+                Console.WriteLine("\nInvalid input.");
 
-            Console.WriteLine("\nChoose an operator from the following list:\n");
-            PrintMenuOptions();
+            Console.WriteLine("\nPlease choose any of the following options (you have to type the number, i.e. 2):\n");
+
+            foreach (MainMenuOptions option in Enum.GetValues(typeof(MainMenuOptions)))
+                Console.WriteLine($"\t{(int)option}. {option}");
         }
 
-        public static void PrintMenuOptions()
+        public static bool TryGetMenuOption(string? input, out MainMenuOptions menuItem)
         {
+            menuItem = default;
+
+            if (!int.TryParse(input, out int optionNumber))
+                return false;
+
+            if (!Enum.IsDefined(typeof(MainMenuOptions), optionNumber))
+                return false;
+
+            menuItem = (MainMenuOptions)optionNumber;
+            return true;
+        }
+
+        public static void PrintOperations(bool invalid = false)
+        {
+            if (invalid)
+                Console.WriteLine("\nError: Unrecognized input.");
+
+            Console.WriteLine("\nChoose an operation from the following list (you have to type the letter, i.e. 'a'):\n");
+
             foreach (var (key, op) in _operations)
                 Console.WriteLine($"\t{key} - {op}");
 
@@ -57,7 +80,7 @@
             Console.WriteLine("This operation will result in a mathematical error.\n");
         }
 
-        public static bool ValidateMainOptions(string? option)
+        public static bool ValidateOperationChoice(string? option)
         {
             if (string.IsNullOrEmpty(option) || string.IsNullOrWhiteSpace(option) || option.Length != 1)
                 return false;

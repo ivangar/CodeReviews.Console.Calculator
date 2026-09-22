@@ -119,18 +119,23 @@ namespace CalculatorLibrary
 
         public void PrintAllOperations()
         {
-            Console.WriteLine("\nLatest Calculations:\n");
-
-            foreach (var (index, operation) in _operations.Select((o, i) => (i, o)))
+            if (_operations.Count != 0)
             {
-                Console.WriteLine($"{index + 1}. {operation}");
+                Console.WriteLine("\nLatest calculations:\n");
+
+                foreach (var (index, operation) in _operations.Select((o, i) => (i, o)))
+                {
+                    Console.WriteLine($"{index + 1}. {operation}");
+                }
             }
 
-            Console.WriteLine("\n\n");
+            else
+                Console.WriteLine("\nThere are no calculations to display:\n");
         }
 
         public void DeleteOperations()
         {
+            Console.WriteLine("\nDeleting all current operations:\n");
             _operations.Clear();
         }
 
