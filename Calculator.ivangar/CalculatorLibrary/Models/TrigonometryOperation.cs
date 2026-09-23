@@ -14,6 +14,6 @@ namespace CalculatorLibrary.Models
 
         public TrigonometryFunctions Function { get; set; }
 
-        public override string ToString() => $"{Function}({Degrees}{Operation}) = {Result}";
+        public override string ToString() => $"{Function}({Degrees}{Operation}) = {Result:0.##}";
     }
 }

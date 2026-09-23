@@ -6,6 +6,6 @@
         public double OperandB { get; init; }
         public char Operation { get; init; }
         public double Result { get; init; }
-        public override string ToString() => $"{OperandA} {Operation} {OperandB} = {Result}";
+        public override string ToString() => $"{OperandA} {Operation} {OperandB} = {Result:0.##}";
     }
 }

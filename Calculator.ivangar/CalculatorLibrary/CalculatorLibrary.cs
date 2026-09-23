@@ -1,24 +1,32 @@
 ﻿using CalculatorLibrary.Enums;
 using CalculatorLibrary.Models;
-using Newtonsoft.Json;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace CalculatorLibrary
 {
     public class CalculatorEngine
     {
-        JsonWriter writer;
+        private readonly Utf8JsonWriter _writer;
 
         private readonly List<MathOperation> _operations = new();
 
+        private int _operationCount = 0;
+
         public CalculatorEngine()
         {
-            StreamWriter logFile = File.CreateText("calculator.json");
-            logFile.AutoFlush = true;
-            writer = new JsonTextWriter(logFile);
-            writer.Formatting = Formatting.Indented;
-            writer.WriteStartObject();
-            writer.WritePropertyName("Operations");
-            writer.WriteStartArray();
+            var stream = new FileStream("calculator.json", FileMode.Create, FileAccess.Write, FileShare.None);
+            var options = new JsonWriterOptions
+            {
+                Indented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            _writer = new Utf8JsonWriter(stream, options);
+
+            _writer.WriteStartObject();
+            _writer.WritePropertyName("Operations");
+            _writer.WriteStartArray();
         }
 
         public double DoOperation(double num1, string op, double num2 = 0)
@@ -33,52 +41,51 @@ namespace CalculatorLibrary
                 case "a":
                     operation = '+';
                     result = num1 + num2;
-                    writer.WriteValue(operation);
+                    _writer.WriteStringValue(operation.ToString());
                     AddBasicOperation(num1, num2, operation, result);
                     break;
                 case "s":
                     operation = '-';
                     result = num1 - num2;
-                    writer.WriteValue(operation);
+                    _writer.WriteStringValue(operation.ToString());
                     AddBasicOperation(num1, num2, operation, result);
                     break;
                 case "m":
                     operation = '*';
                     result = num1 * num2;
-                    writer.WriteValue(operation);
+                    _writer.WriteStringValue(operation.ToString());
                     AddBasicOperation(num1, num2, operation, result);
                     break;
                 case "d":
-                    // Ask the user to enter a non-zero divisor.
-                    if (num2 != 0)
+                    operation = '/';
+                    _writer.WriteStringValue(operation.ToString());
+                    if (TryDivide(num1, num2, out result))
                     {
-                        operation = '/';
-                        result = num1 / num2;
-                        writer.WriteValue(operation);
                         AddBasicOperation(num1, num2, operation, result);
                     }
                     break;
                 case "r":
                     operation = '√';
+                    _writer.WriteStringValue(operation.ToString());
                     if (TryCalculateSquareRoot(num1, out result))
                     {
-                        writer.WriteValue(operation);
                         AddSquareRootOperation(num1, operation, result);
                     }
                     break;
                 case "p":
                     operation = '^';
+                    _writer.WriteStringValue(operation.ToString());
                     if (TryCalculateExponent(num1, num2, out result))
                     {
-                        writer.WriteValue(operation);
                         AddPowerOperation(num1, num2, operation, result);
                     }
                     break;
-                // Return text for an incorrect option entry.
                 default:
+                    Console.WriteLine("This operation does not exist");
                     break;
             }
 
+            _operationCount++;
             LogResult(result);
             return result;
         }
@@ -90,12 +97,11 @@ namespace CalculatorLibrary
 
             if (TryCalculateTrygonometry(degrees, function, out result))
             {
-                writer.WriteStartObject();
-                writer.WritePropertyName("Operand1");
-                writer.WriteValue(degrees);
-                writer.WritePropertyName("Operation");
-                writer.WriteValue(operation);
+                _writer.WriteStartObject();
+                _writer.WriteNumber("Operand1", degrees);
+                _writer.WriteString("Operation", operation.ToString());
                 LogResult(result);
+
                 AddTrigOperation(degrees, function, operation, result);
             }
 
@@ -104,24 +110,26 @@ namespace CalculatorLibrary
 
         public void Finish()
         {
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-            writer.Close();
-            CountOperations();
+            _writer.WriteEndArray();
+            _writer.WriteEndObject();
+            _writer.Dispose();
+
             PrintAllOperations();
         }
 
         public void CountOperations()
         {
-            var countTimes = _operations.Count == 1 ? "time" : "times";
-            Console.WriteLine($"The calculator was used {_operations.Count} {countTimes}.\n");
+            var countTimes = _operationCount == 1 ? "time" : "times";
+            Console.WriteLine($"\nThe calculator was used {_operations.Count} {countTimes}.\n");
         }
 
         public void PrintAllOperations()
         {
+            CountOperations();
+
             if (_operations.Count != 0)
             {
-                Console.WriteLine("\nLatest calculations:\n");
+                Console.WriteLine("Latest calculations:\n");
 
                 foreach (var (index, operation) in _operations.Select((o, i) => (i, o)))
                 {
@@ -141,45 +149,72 @@ namespace CalculatorLibrary
 
         private void AddBasicOperation(double num1, double num2, char op, double result)
         {
-            _operations.Add(new MathOperation
+            var operation = new MathOperation
             {
                 OperandA = num1,
                 OperandB = num2,
                 Operation = op,
                 Result = result
-            });
+            };
+
+            _operations.Add(operation);
+            Console.WriteLine($"Operation: {operation}\n");
         }
 
         private void AddSquareRootOperation(double radicand, char op, double result)
         {
-            _operations.Add(new SquareRoot
+            var operation = new SquareRoot
             {
                 Radicand = radicand,
                 Operation = op,
                 Result = result
-            });
+            };
+
+            _operations.Add(operation);
+            Console.WriteLine($"Operation: {operation}\n");
         }
 
         private void AddPowerOperation(double baseNumber, double exponent, char op, double result)
         {
-            _operations.Add(new Exponentiation
+            var operation = new Exponentiation
             {
                 Base = baseNumber,
                 Exponent = exponent,
                 Operation = op,
                 Result = result
-            });
+            };
+
+            _operations.Add(operation);
+            Console.WriteLine($"Operation: {operation}\n");
         }
 
         private void AddTrigOperation(double degrees, TrigonometryFunctions function, char op, double result)
         {
-            _operations.Add(new TrigonometryOperation
+            var operation = new TrigonometryOperation
             {
                 Degrees = degrees,
                 Function = function,
                 Operation = op,
                 Result = result
-            });
+            };
+
+            _operations.Add(operation);
+            Console.WriteLine($"Operation: {operation}\n");
+        }
+
+        private bool TryDivide(double num1, double num2, out double result)
+        {
+            if (num2 == 0)
+            {
+                Console.WriteLine("Cannot divide by zero.");
+                result = default;
+                return false;
+            }
+            else
+            {
+                result = num1 / num2;
+                return true;
+            }
         }
 
         private bool TryCalculateSquareRoot(double radicand, out double result)
@@ -241,19 +276,16 @@ namespace CalculatorLibrary
 
         private void LogOperationObject(double num1, double num2)
         {
-            writer.WriteStartObject();
-            writer.WritePropertyName("Operand1");
-            writer.WriteValue(num1);
-            writer.WritePropertyName("Operand2");
-            writer.WriteValue(num2);
-            writer.WritePropertyName("Operation");
+            _writer.WriteStartObject();
+            _writer.WriteNumber("Operand1", num1);
+            _writer.WriteNumber("Operand2", num2);
+            _writer.WritePropertyName("Operation");
         }
 
         private void LogResult(double result)
         {
-            writer.WritePropertyName("Result");
-            writer.WriteValue(result);
-            writer.WriteEndObject();
+            _writer.WriteNumber("Result", Math.Round(result, 2, MidpointRounding.AwayFromZero));
+            _writer.WriteEndObject();
         }
     }
 }

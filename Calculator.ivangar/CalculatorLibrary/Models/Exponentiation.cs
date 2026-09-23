@@ -5,7 +5,7 @@
         public double Base { get; set; }
         public double Exponent { get; set; }
 
-        public override string ToString() => $"{Base} ^ {Exponent} = {Result}";
+        public override string ToString() => $"{Base} ^ {Exponent} = {Result:0.##}";
 
     }
 }
